@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraControl : MonoBehaviour
 {
-
+    // 마우스 민감도
     public float sensitibity;
     
     
@@ -38,6 +38,7 @@ public class CameraControl : MonoBehaviour
         
     }
 
+    // 마우스의 움직임을 확인하여 카메라를 이동, 회전시키는 함수
     private void CheckMouseMove(float moveX, float moveY)
     {
         mouseAngleX += -moveX * sensitibity;
