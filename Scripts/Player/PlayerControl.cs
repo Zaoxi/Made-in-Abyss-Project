@@ -52,7 +52,7 @@ public class PlayerControl : MonoBehaviour
         {
             playerAnimator.SetTrigger("Jump");
 
-            transform.Translate(0f, 5f, 5f);
+            rb.AddForce(new Vector3(0f, 2f, 0f));
             return true;
         }
         return false;
