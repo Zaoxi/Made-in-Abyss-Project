@@ -10,6 +10,7 @@ public class PlayerControl : MonoBehaviour
     private Animator playerAnimator;
 
     public float speed;
+    private bool run = false;
 
     // 플레이어 회전 프레임
     private const float FRAME_ROTATION = 20F;
@@ -28,8 +29,23 @@ public class PlayerControl : MonoBehaviour
     {
         float moveV = Input.GetAxis("Vertical") * speed;
         float moveH = Input.GetAxis("Horizontal") * speed;
+        CheckRun();
         PlayerMove(moveV, moveH);
         
+    }
+
+    private void CheckRun()
+    {
+        if(Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            playerAnimator.SetBool("Run", true);
+            run = true;
+        }
+        else if(Input.GetKeyUp(KeyCode.LeftShift))
+        {
+            playerAnimator.SetBool("Run", false);
+            run = false;
+        }
     }
 
 
@@ -42,21 +58,8 @@ public class PlayerControl : MonoBehaviour
         float moveH_deltaTime = moveH * Time.deltaTime;
 
         // 애니메이터 패러미터 세팅
-        if (moveV < 0f)
-        {
-            playerAnimator.SetBool("moveBack", true);
-            playerAnimator.SetBool("move", false);
-        }
-        else if (moveV > 0f || moveH != 0f)
-        {
-            playerAnimator.SetBool("move", true);
-            playerAnimator.SetBool("moveBack", false);
-        }
-        else
-        {
-            playerAnimator.SetBool("move", false);
-            playerAnimator.SetBool("moveBack", false);
-        }
+        playerAnimator.SetFloat("moveV", moveV);
+        playerAnimator.SetFloat("moveH", moveH);
 
 
         // 플레이어가 움직이는 경우
@@ -123,7 +126,12 @@ public class PlayerControl : MonoBehaviour
         }
         else
         {
-            move = (Mathf.Abs(moveV) > Mathf.Abs(moveH) ? moveV_deltaTime : Mathf.Abs(moveH_deltaTime));
+            move = (Mathf.Abs(moveV) < Mathf.Abs(moveH) ? Mathf.Abs(moveH_deltaTime) : moveV_deltaTime);
+        }
+
+        if(moveV >= 0f && run)
+        {
+            move *= 2f;
         }
 
         transform.Translate(0f, 0f, move);
