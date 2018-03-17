@@ -10,6 +10,7 @@ public class PlayerControl : MonoBehaviour
     private Animator playerAnimator;
 
     public float speed;
+    private bool jump = false;
     private bool run = false;
 
     // 플레이어 회전 프레임
@@ -30,10 +31,40 @@ public class PlayerControl : MonoBehaviour
         float moveV = Input.GetAxis("Vertical") * speed;
         float moveH = Input.GetAxis("Horizontal") * speed;
         CheckRun();
-        PlayerMove(moveV, moveH);
-        
+
+        if (!jump)
+        {
+            PlayerMove(moveV, moveH);
+
+            jump = CheckJump();
+        }
+        else
+        {
+            StartCoroutine(WaitJump());
+        }
+
     }
 
+    // 플레이어가 Space 버튼을 눌렀는지 검사하는 함수
+    private bool CheckJump()
+    {
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            playerAnimator.SetTrigger("Jump");
+
+            transform.Translate(0f, 5f, 5f);
+            return true;
+        }
+        return false;
+    }
+
+    private IEnumerator WaitJump()
+    {
+        yield return new WaitForSeconds(1f);
+        jump = false;
+    }
+
+    // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 함수
     private void CheckRun()
     {
         if(Input.GetKeyDown(KeyCode.LeftShift))
