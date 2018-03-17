@@ -6,12 +6,16 @@ public class PlayerControl : MonoBehaviour
 {
 
     private GameObject playerCamera;
-    private Rigidbody rb;
     private Animator playerAnimator;
+    private CapsuleCollider collider;
 
     public float speed;
     private bool jump = false;
     private bool run = false;
+    // 방금 프레임에서 움직인 거리
+    private float previousMove = 0f;
+    // 점프했을 때, 다음 프레임에서 올라갈 높이
+    private float nextJump = PlayerConstant.PLAYER_BASE_JUMP;
 
     // 플레이어 회전 프레임
     private const float FRAME_ROTATION = 20F;
@@ -20,9 +24,9 @@ public class PlayerControl : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
         playerAnimator = GetComponent<Animator>();
+        collider = GetComponent<CapsuleCollider>();
     }
 
     // Update is called once per frame
@@ -34,45 +38,57 @@ public class PlayerControl : MonoBehaviour
 
         if (!jump)
         {
-            PlayerMove(moveV, moveH);
+            previousMove = PlayerMove(moveV, moveH);
 
             jump = CheckJump();
         }
         else
         {
-            StartCoroutine(WaitJump());
+            Jump();
         }
 
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (nextJump < 0f)
+        {
+            if (collision.gameObject.CompareTag("Floor"))
+            {
+                nextJump = PlayerConstant.PLAYER_BASE_JUMP;
+                jump = false;
+            }
+
+        }
+    }
+
+    // 플레이어가 점프했을 때, 위치를 이동
+    private void Jump()
+    {
+        transform.Translate(0f, nextJump / 2, previousMove / 2);
+        nextJump -= PlayerConstant.PLAYER_GRABITY;
     }
 
     // 플레이어가 Space 버튼을 눌렀는지 검사하는 함수
     private bool CheckJump()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             playerAnimator.SetTrigger("Jump");
-
-            rb.AddForce(new Vector3(0f, 2f, 0f));
             return true;
         }
         return false;
     }
 
-    private IEnumerator WaitJump()
-    {
-        yield return new WaitForSeconds(1f);
-        jump = false;
-    }
-
     // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 함수
     private void CheckRun()
     {
-        if(Input.GetKeyDown(KeyCode.LeftShift))
+        if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             playerAnimator.SetBool("Run", true);
             run = true;
         }
-        else if(Input.GetKeyUp(KeyCode.LeftShift))
+        else if (Input.GetKeyUp(KeyCode.LeftShift))
         {
             playerAnimator.SetBool("Run", false);
             run = false;
@@ -80,8 +96,8 @@ public class PlayerControl : MonoBehaviour
     }
 
 
-    // 플레이어가 이동하는 함수
-    private void PlayerMove(float moveV, float moveH)
+    // 플레이어가 이동하는 함수, 플레이어의 다음 이동할 거리 반환(Vector3)
+    private float PlayerMove(float moveV, float moveH)
     {
         float move;
 
@@ -160,12 +176,14 @@ public class PlayerControl : MonoBehaviour
             move = (Mathf.Abs(moveV) < Mathf.Abs(moveH) ? Mathf.Abs(moveH_deltaTime) : moveV_deltaTime);
         }
 
-        if(moveV >= 0f && run)
+        if (moveV >= 0f && run)
         {
             move *= 2f;
         }
 
         transform.Translate(0f, 0f, move);
+
+        return move;
     }
 }
 
@@ -173,4 +191,6 @@ public class PlayerControl : MonoBehaviour
 public static class PlayerConstant
 {
     public static float PLAYER_HEIGHT = 1.2f;
+    public static float PLAYER_GRABITY = 0.004f;
+    public static float PLAYER_BASE_JUMP = 0.1f;
 }
