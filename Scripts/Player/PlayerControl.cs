@@ -7,6 +7,14 @@ public class PlayerControl : MonoBehaviour
 
     private GameObject playerCamera;
     private Animator playerAnimator;
+    private Rigidbody rb;
+    private PlayerBack playerBack;
+    private PlayerRightHand playerRightHand;
+
+
+    private GameObject equipped;
+
+
 
     public float speed;
     private bool space = false;
@@ -25,26 +33,44 @@ public class PlayerControl : MonoBehaviour
     {
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
         playerAnimator = GetComponent<Animator>();
+        rb = GetComponent<Rigidbody>();
+        equipped = GameObject.FindGameObjectWithTag("Weapons");
+        playerBack = GameObject.FindObjectOfType<PlayerBack>();
+        playerRightHand = GameObject.FindObjectOfType<PlayerRightHand>();
+
+        Debug.Log(equipped);
+        equipped.transform.parent = playerRightHand.transform;
+        equipped.transform.position = playerRightHand.transform.position;
+        equipped.transform.rotation = playerRightHand.transform.rotation;
     }
 
     // Update is called once per frame
     void Update()
     {
+        
+    }
+
+    void FixedUpdate()
+    {
         float moveV = Input.GetAxis("Vertical") * speed;
         float moveH = Input.GetAxis("Horizontal") * speed;
+
+        // 플레이어가 Shift키를 눌렀는지 검사
         CheckRun();
+
 
         if (!space)
         {
+            // 플레이어의 움직임제어
             previousMove = PlayerMove(moveV, moveH);
 
+            // 플레이어가 Space키를 눌렀는지 검사
             space = CheckSpace();
-        } // 점프를 누른 뒤 1초 경과 후 플레이어 조작 가능
-        else if(Time.time - startTime > 0.5f)
+        } // Space를 누른 뒤 1초 경과 후 플레이어 조작 가능
+        else if (Time.time - startTime > 0.5f)
         {
             space = false;
         }
-
     }
 
 
@@ -63,12 +89,12 @@ public class PlayerControl : MonoBehaviour
     // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 함수
     private void CheckRun()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        if (Input.GetKey(KeyCode.LeftShift))
         {
             playerAnimator.SetBool("Run", true);
             run = true;
         }
-        else if (Input.GetKeyUp(KeyCode.LeftShift))
+        else //if (Input.GetKeyUp(KeyCode.LeftShift))
         {
             playerAnimator.SetBool("Run", false);
             run = false;
@@ -110,43 +136,43 @@ public class PlayerControl : MonoBehaviour
 
             if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.W))
             {
-                transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
+                rb.transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
                 move = (moveV_deltaTime > moveH_deltaTime ? moveV_deltaTime : moveH_deltaTime);
                 //transform.Translate(0f, 0.0f, (moveV_deltaTime > moveH_deltaTime ? moveV_deltaTime : moveH_deltaTime));
             }
             else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.W))
             {
-                transform.Rotate(0f, (angleTerm - 45) / FRAME_ROTATION, 0f);
+                rb.transform.Rotate(0f, (angleTerm - 45) / FRAME_ROTATION, 0f);
                 move = (moveV_deltaTime > -moveH_deltaTime ? moveV_deltaTime : -moveH_deltaTime);
                 //transform.Translate(0f, 0.0f, (moveV_deltaTime > -moveH_deltaTime ? moveV_deltaTime : -moveH_deltaTime));
             }
             else if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.S))
             {
-                transform.Rotate(0f, (angleTerm - 45) / FRAME_ROTATION, 0f);
+                rb.transform.Rotate(0f, (angleTerm - 45) / FRAME_ROTATION, 0f);
                 move = (moveV_deltaTime < -moveH_deltaTime ? moveV_deltaTime : -moveH_deltaTime);
                 //transform.Translate(0f, 0.0f, (moveV_deltaTime > -moveH_deltaTime ? -moveV_deltaTime : moveH_deltaTime));
             }
             else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.S))
             {
-                transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
+                rb.transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
                 move = (moveV_deltaTime < moveH_deltaTime ? moveV_deltaTime : moveH_deltaTime);
                 //transform.Translate(0f, 0.0f, (moveV_deltaTime > moveH_deltaTime ? -moveV_deltaTime : -moveH_deltaTime));
             }
             else if (Input.GetKey(KeyCode.D))
             {
-                transform.Rotate(0f, (angleTerm + 90) / FRAME_ROTATION, 0f);
+                rb.transform.Rotate(0f, (angleTerm + 90) / FRAME_ROTATION, 0f);
                 move = moveH_deltaTime;
                 //transform.Translate(0f, 0.0f, moveH_deltaTime);
             }
             else if (Input.GetKey(KeyCode.A))
             {
-                transform.Rotate(0f, (angleTerm - 90) / FRAME_ROTATION, 0f);
+                rb.transform.Rotate(0f, (angleTerm - 90) / FRAME_ROTATION, 0f);
                 move = -moveH_deltaTime;
                 //transform.Translate(0f, 0.0f, -moveH_deltaTime);
             }
             else
             {
-                transform.Rotate(0f, angleTerm / FRAME_ROTATION, 0f);
+                rb.transform.Rotate(0f, angleTerm / FRAME_ROTATION, 0f);
                 move = moveV_deltaTime;
                 //transform.Translate(0f, 0.0f, moveV_deltaTime);
             }
@@ -161,7 +187,8 @@ public class PlayerControl : MonoBehaviour
             move *= 2f;
         }
 
-        transform.Translate(0f, 0f, move);
+        rb.transform.Translate(0f, 0f, move);
+        //rb.MovePosition(this.transform.position + Vector3.forward*move);
 
         return move;
     }
