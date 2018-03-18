@@ -7,15 +7,14 @@ public class PlayerControl : MonoBehaviour
 
     private GameObject playerCamera;
     private Animator playerAnimator;
-    private CapsuleCollider collider;
 
     public float speed;
-    private bool jump = false;
+    private bool space = false;
     private bool run = false;
     // 방금 프레임에서 움직인 거리
     private float previousMove = 0f;
-    // 점프했을 때, 다음 프레임에서 올라갈 높이
-    private float nextJump = PlayerConstant.PLAYER_BASE_JUMP;
+
+    private float startTime = 0f;
 
     // 플레이어 회전 프레임
     private const float FRAME_ROTATION = 20F;
@@ -26,7 +25,6 @@ public class PlayerControl : MonoBehaviour
     {
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
         playerAnimator = GetComponent<Animator>();
-        collider = GetComponent<CapsuleCollider>();
     }
 
     // Update is called once per frame
@@ -36,45 +34,27 @@ public class PlayerControl : MonoBehaviour
         float moveH = Input.GetAxis("Horizontal") * speed;
         CheckRun();
 
-        if (!jump)
+        if (!space)
         {
             previousMove = PlayerMove(moveV, moveH);
 
-            jump = CheckJump();
-        }
-        else
+            space = CheckSpace();
+        } // 점프를 누른 뒤 1초 경과 후 플레이어 조작 가능
+        else if(Time.time - startTime > 0.5f)
         {
-            Jump();
+            space = false;
         }
 
     }
 
-    void OnCollisionEnter(Collision collision)
-    {
-        if (nextJump < 0f)
-        {
-            if (collision.gameObject.CompareTag("Floor"))
-            {
-                nextJump = PlayerConstant.PLAYER_BASE_JUMP;
-                jump = false;
-            }
-
-        }
-    }
-
-    // 플레이어가 점프했을 때, 위치를 이동
-    private void Jump()
-    {
-        transform.Translate(0f, nextJump / 2, previousMove / 2);
-        nextJump -= PlayerConstant.PLAYER_GRABITY;
-    }
 
     // 플레이어가 Space 버튼을 눌렀는지 검사하는 함수
-    private bool CheckJump()
+    private bool CheckSpace()
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
             playerAnimator.SetTrigger("Jump");
+            startTime = Time.time;
             return true;
         }
         return false;
@@ -191,6 +171,4 @@ public class PlayerControl : MonoBehaviour
 public static class PlayerConstant
 {
     public static float PLAYER_HEIGHT = 1.2f;
-    public static float PLAYER_GRABITY = 0.004f;
-    public static float PLAYER_BASE_JUMP = 0.1f;
 }
