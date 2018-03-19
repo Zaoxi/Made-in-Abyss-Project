@@ -25,7 +25,7 @@ public class CrosshairController : MonoBehaviour {
             //transform.position = hit.transform.position;
             if(!hit.transform.CompareTag("Floor"))
             {
-
+                float averageScale = (hit.transform.localScale.x + hit.transform.localScale.y + hit.transform.localScale.z) / 3f;
                 // 플레이어로 부터 물체까지의 거리 + a
                 float DistanceA = Vector3.Distance(player.transform.position, hit.transform.position) - hit.transform.localScale.z;
                 // 플레이어로부터 크로스헤어까지의 거리
