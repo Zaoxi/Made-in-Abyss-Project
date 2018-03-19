@@ -41,11 +41,11 @@ public class PlayerControl : MonoBehaviour
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
         playerAnimator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
-        equipped = GameObject.FindGameObjectWithTag("Equipped");
+        //equipped = GameObject.FindGameObjectWithTag("Equipped");
         playerBack = GameObject.FindObjectOfType<PlayerBack>();
         playerRightHand = GameObject.FindObjectOfType<PlayerRightHand>();
 
-        Debug.Log(equipped);
+        //Debug.Log(equipped);
     }
 
     // Update is called once per frame
@@ -71,7 +71,7 @@ public class PlayerControl : MonoBehaviour
             // 플레이어가 Space키를 눌렀는지 검사
             space = CheckSpace();
         } // Space를 누른 뒤 1초 경과 후 플레이어 조작 가능
-        else if (Time.time - startTime > 0.5f)
+        else if (Time.time - startTime > 0.8f)
         {
             space = false;
         }
