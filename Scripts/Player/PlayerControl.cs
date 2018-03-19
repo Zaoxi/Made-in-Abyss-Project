@@ -4,24 +4,31 @@ using UnityEngine;
 
 public class PlayerControl : MonoBehaviour
 {
-
+    // 플레이어 메인 카메라 오브젝트
     private GameObject playerCamera;
+    // 플레이어 애니메이터
     private Animator playerAnimator;
     private Rigidbody rb;
+    // 플레이어 등 아이템 장착 위치
     private PlayerBack playerBack;
+    // 플레이어 오른손 아이템 장착 위치
     private PlayerRightHand playerRightHand;
 
 
     private GameObject equipped;
 
 
-
+    // 플레이어의 스피드
     public float speed;
+    // 점프를 활성화화는 플래그
     private bool space = false;
+    // 달리기를 활성화하는 플래그
     private bool run = false;
+    // F키를 활성화하는 플래그
+    private bool enableF = false;
     // 방금 프레임에서 움직인 거리
     private float previousMove = 0f;
-
+    // 점프 후 조작 제어를 위한 시간
     private float startTime = 0f;
 
     // 플레이어 회전 프레임
@@ -34,14 +41,11 @@ public class PlayerControl : MonoBehaviour
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
         playerAnimator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
-        equipped = GameObject.FindGameObjectWithTag("Weapons");
+        equipped = GameObject.FindGameObjectWithTag("Equipped");
         playerBack = GameObject.FindObjectOfType<PlayerBack>();
         playerRightHand = GameObject.FindObjectOfType<PlayerRightHand>();
 
         Debug.Log(equipped);
-        equipped.transform.parent = playerRightHand.transform;
-        equipped.transform.position = playerRightHand.transform.position;
-        equipped.transform.rotation = playerRightHand.transform.rotation;
     }
 
     // Update is called once per frame
@@ -70,6 +74,40 @@ public class PlayerControl : MonoBehaviour
         else if (Time.time - startTime > 0.5f)
         {
             space = false;
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(CheckItemEntered(collision))
+        {
+            enableF = true;
+        }
+        else
+        {
+            enableF = false;
+        }
+    }
+
+    private bool CheckItemEntered(Collision item)
+    {
+        if(item.gameObject.CompareTag("Weapons"))
+        {
+            return true;
+        }
+        return false;
+    }
+
+
+    // 아이템 획득 키 F를 누르는지 검사하는 함수
+    private void CheckGetItem()
+    {
+        if(enableF)
+        {
+            if(Input.GetKeyDown(KeyCode.F))
+            {
+
+            }
         }
     }
 
