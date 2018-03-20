@@ -4,29 +4,36 @@ using UnityEngine;
 
 public class WeaponManager : MonoBehaviour {
 
-    private static WeaponManager instance = null;
+    static private WeaponManager instance = null;
 
-    public GameObject[] weapons;
-    public GameObject[] playerRighthand;
-    public GameObject[] playerBack;
-
-    private GameObject[] presentWeapons;
-
-    const int PLAYER_RIGHT_HAND = 0;
-    const int PLAYER_BACK1 = 1;
-    const int PLAYER_BACK2 = 2;
+    private List<GameObject> existWeapons;
 
     public static WeaponManager GetInstance()
     {
-        if (instance == null)
-            instance = GameObject.FindObjectOfType(typeof(WeaponManager)) as WeaponManager;
+        if (instance == null) instance = GameObject.FindObjectOfType<WeaponManager>();
         return instance;
     }
 
-    void Start()
+    private void Start()
     {
-        presentWeapons = new GameObject[3];
+        GameObject[] exist;
+        exist = GameObject.FindGameObjectsWithTag("Weapons");
+
+        for(int i=0; i<exist.Length; i++)
+        {
+            existWeapons.Add(exist[i]);
+        }
     }
 
+    public void ChangeWeaponTag(GameObject weapon)
+    {
+        for(int i = 0; i < existWeapons.Count; i++)
+        {
+            if(weapon == existWeapons[i])
+            {
+                weapon.tag = "equipped";
+            }
+        }
+    }
 }
 

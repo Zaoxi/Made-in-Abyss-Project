@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PlayerControl : MonoBehaviour
 {
+    private WeaponManager weaponManager;
     // 플레이어 메인 카메라 오브젝트
     private GameObject playerCamera;
     // 플레이어 애니메이터
@@ -20,12 +21,16 @@ public class PlayerControl : MonoBehaviour
 
     // 플레이어의 스피드
     public float speed;
+
+
     // 점프를 활성화화는 플래그
     private bool space = false;
     // 달리기를 활성화하는 플래그
     private bool run = false;
-    // F키를 활성화하는 플래그
-    private bool enableF = false;
+    // F(아이템 줍기)키를 활성화 하는 플래그
+    private int f = 0;
+
+
     // 방금 프레임에서 움직인 거리
     private float previousMove = 0f;
     // 점프 후 조작 제어를 위한 시간
@@ -38,6 +43,7 @@ public class PlayerControl : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        weaponManager = WeaponManager.GetInstance();
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
         playerAnimator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
@@ -77,39 +83,6 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if(CheckItemEntered(collision))
-        {
-            enableF = true;
-        }
-        else
-        {
-            enableF = false;
-        }
-    }
-
-    private bool CheckItemEntered(Collision item)
-    {
-        if(item.gameObject.CompareTag("Weapons"))
-        {
-            return true;
-        }
-        return false;
-    }
-
-
-    // 아이템 획득 키 F를 누르는지 검사하는 함수
-    private void CheckGetItem()
-    {
-        if(enableF)
-        {
-            if(Input.GetKeyDown(KeyCode.F))
-            {
-
-            }
-        }
-    }
 
 
     // 플레이어가 Space 버튼을 눌렀는지 검사하는 함수
@@ -229,6 +202,25 @@ public class PlayerControl : MonoBehaviour
         //rb.MovePosition(this.transform.position + Vector3.forward*move);
 
         return move;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // 주변 아이템 개수 증가
+        if(collision.gameObject.CompareTag("Weapons"))
+        {
+            f++;
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        // 주변 아이템 개수 감소
+        if(collision.gameObject.CompareTag("Weapon"))
+        {
+            f--;
+
+        }
     }
 }
 
