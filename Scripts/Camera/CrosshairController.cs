@@ -21,6 +21,7 @@ public class CrosshairController : MonoBehaviour {
         Debug.Log(ray);
         if (Physics.Raycast(ray, out hit))
         {
+            
             Debug.Log(hit.transform);
             //transform.position = hit.transform.position;
             if(!hit.transform.CompareTag("Floor"))
@@ -55,7 +56,11 @@ public class CrosshairController : MonoBehaviour {
                 }
                 else if (transform.localPosition.z >= 2.5f)
                 {
-                    transform.Translate(0f, 0f, -(transform.localPosition.z - tan));
+                    if (transform.localPosition.z - (transform.localPosition.z - tan) <= MAX_RANGE)
+                    {
+                        transform.Translate(0f, 0f, -(transform.localPosition.z - tan));
+                    }
+                    
                 }
             }
             
