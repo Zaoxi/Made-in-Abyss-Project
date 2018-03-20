@@ -4079,6 +4079,7 @@ MonoBehaviour:
   m_DistantDisable: 0
   m_ReferenceObject: {fileID: 0}
   m_DistanceToObject: 20
+  Testing: {fileID: 0}
 --- !u!114 &114523598484707022
 MonoBehaviour:
   m_ObjectHideFlags: 1

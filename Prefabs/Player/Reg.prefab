@@ -2868,6 +2868,7 @@ MonoBehaviour:
   m_DistantDisable: 0
   m_ReferenceObject: {fileID: 0}
   m_DistanceToObject: 20
+  Testing: {fileID: 0}
 --- !u!137 &137861576511091036
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 1

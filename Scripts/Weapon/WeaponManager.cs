@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class WeaponManager : MonoBehaviour {
+public class WeaponManager : MonoBehaviour
+{
+    private static WeaponManager instance = null;
+    private PlayerControl playerControl;
 
-    static private WeaponManager instance = null;
-
-    private List<GameObject> existWeapons;
+    // 모든 무기 저장
+    public GameObject runicAxe;
 
     public static WeaponManager GetInstance()
     {
@@ -14,26 +16,17 @@ public class WeaponManager : MonoBehaviour {
         return instance;
     }
 
-    private void Start()
+    
+    void Start()
     {
-        GameObject[] exist;
-        exist = GameObject.FindGameObjectsWithTag("Weapons");
+        playerControl = PlayerControl.GetInstance();
 
-        for(int i=0; i<exist.Length; i++)
-        {
-            existWeapons.Add(exist[i]);
-        }
+        //GameObject existRunicAxe = Instantiate(runicAxe);
+
     }
 
-    public void ChangeWeaponTag(GameObject weapon)
+    public PlayerControl GetPlayerControl()
     {
-        for(int i = 0; i < existWeapons.Count; i++)
-        {
-            if(weapon == existWeapons[i])
-            {
-                weapon.tag = "equipped";
-            }
-        }
+        return playerControl;
     }
 }
-

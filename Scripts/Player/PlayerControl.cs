@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class PlayerControl : MonoBehaviour
 {
-    private WeaponManager weaponManager;
+    private static PlayerControl instance = null;
+
+    private CrosshairController crossHair;
     // 플레이어 메인 카메라 오브젝트
     private GameObject playerCamera;
     // 플레이어 애니메이터
@@ -17,6 +19,7 @@ public class PlayerControl : MonoBehaviour
 
 
     private GameObject equipped;
+    private List<GameObject> aroundWeapons;
 
 
     // 플레이어의 스피드
@@ -40,24 +43,29 @@ public class PlayerControl : MonoBehaviour
     private const float FRAME_ROTATION = 20F;
 
 
-    // Use this for initialization
+    public static PlayerControl GetInstance()
+    {
+        if (instance == null) instance = GameObject.FindObjectOfType<PlayerControl>();
+        return instance;
+    }
+
+
     void Start()
     {
-        weaponManager = WeaponManager.GetInstance();
+        
+        crossHair = GameObject.FindObjectOfType<CrosshairController>();
+        aroundWeapons = new List<GameObject>();
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
         playerAnimator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
-        //equipped = GameObject.FindGameObjectWithTag("Equipped");
         playerBack = GameObject.FindObjectOfType<PlayerBack>();
         playerRightHand = GameObject.FindObjectOfType<PlayerRightHand>();
 
-        //Debug.Log(equipped);
     }
 
-    // Update is called once per frame
     void Update()
     {
-        
+        CheckGetWeapon();
     }
 
     void FixedUpdate()
@@ -83,7 +91,32 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
+    public void AddAroundWeapon(GameObject weapon)
+    {
+        aroundWeapons.Add(weapon);
+    }
 
+    public void RemoveAroundWeapon(GameObject weapon)
+    {
+        aroundWeapons.Remove(weapon);
+    }
+
+    private void CheckGetWeapon()
+    {
+        if(aroundWeapons.Count > 0 && Input.GetKeyDown(KeyCode.G))
+        {
+            GameObject aimed = crossHair.GetAimedObject();
+
+            if(aroundWeapons.Contains(aimed))
+            {
+                aimed.tag = "Equipped";
+                aroundWeapons.Remove(aimed);
+                aimed.transform.rotation = playerRightHand.transform.rotation;
+                aimed.transform.position = playerRightHand.transform.position;
+                aimed.transform.parent = playerRightHand.transform;
+            }
+        }
+    }
 
     // 플레이어가 Space 버튼을 눌렀는지 검사하는 함수
     private bool CheckSpace()
@@ -202,25 +235,6 @@ public class PlayerControl : MonoBehaviour
         //rb.MovePosition(this.transform.position + Vector3.forward*move);
 
         return move;
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        // 주변 아이템 개수 증가
-        if(collision.gameObject.CompareTag("Weapons"))
-        {
-            f++;
-        }
-    }
-
-    private void OnCollisionExit(Collision collision)
-    {
-        // 주변 아이템 개수 감소
-        if(collision.gameObject.CompareTag("Weapon"))
-        {
-            f--;
-
-        }
     }
 }
 

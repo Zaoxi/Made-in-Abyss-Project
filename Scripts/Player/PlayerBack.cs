@@ -3,17 +3,5 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerBack : MonoBehaviour {
-    
-
-	// Use this for initialization
-	void Start () {
-        
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-
-    
+    // Empty Script, but don't delete.
 }
