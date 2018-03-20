@@ -21,7 +21,7 @@ public class RunicAxeScript : MonoBehaviour {
         if(col.gameObject.CompareTag("Player"))
         {
             Debug.Log("Enter");
-            PlayerControl playerControl = weaponManager.GetPlayerControl();
+            RikoController playerControl = weaponManager.GetPlayerControl();
             playerControl.AddAroundWeapon(gameObject);
         }
     }
@@ -31,7 +31,7 @@ public class RunicAxeScript : MonoBehaviour {
         if (col.gameObject.CompareTag("Player"))
         {
             Debug.Log("Exit");
-            PlayerControl playerControl = weaponManager.GetPlayerControl();
+            RikoController playerControl = weaponManager.GetPlayerControl();
             playerControl.RemoveAroundWeapon(gameObject);
         }
     }

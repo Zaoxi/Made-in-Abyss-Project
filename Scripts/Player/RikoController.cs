@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerControl : MonoBehaviour
+public class RikoController : MonoBehaviour
 {
-    private static PlayerControl instance = null;
+    private static RikoController instance = null;
 
     private CrosshairController crossHair;
     // 플레이어 메인 카메라 오브젝트
@@ -17,10 +17,11 @@ public class PlayerControl : MonoBehaviour
     // 플레이어 오른손 아이템 장착 위치
     private PlayerRightHand playerRightHand;
 
-
-    private GameObject equipped;
+    // 플레이어 주변에 존재하는 무기
     private List<GameObject> aroundWeapons;
 
+    private GameObject[] playerWeapons;
+    private int curWeapon = 0;
 
     // 플레이어의 스피드
     public float speed;
@@ -43,16 +44,18 @@ public class PlayerControl : MonoBehaviour
     private const float FRAME_ROTATION = 20F;
 
 
-    public static PlayerControl GetInstance()
+    public static RikoController GetInstance()
     {
-        if (instance == null) instance = GameObject.FindObjectOfType<PlayerControl>();
+        if (instance == null) instance = FindObjectOfType<RikoController>();
         return instance;
     }
 
 
     void Start()
     {
-        
+        playerWeapons = new GameObject[2];
+        playerWeapons[0] = null;
+        playerWeapons[1] = null;
         crossHair = GameObject.FindObjectOfType<CrosshairController>();
         aroundWeapons = new List<GameObject>();
         playerCamera = GameObject.FindGameObjectWithTag("MainCamera");
@@ -66,6 +69,7 @@ public class PlayerControl : MonoBehaviour
     void Update()
     {
         CheckGetWeapon();
+        CheckSwapWeapon();
     }
 
     void FixedUpdate()
@@ -91,6 +95,8 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
+
+
     public void AddAroundWeapon(GameObject weapon)
     {
         aroundWeapons.Add(weapon);
@@ -101,24 +107,75 @@ public class PlayerControl : MonoBehaviour
         aroundWeapons.Remove(weapon);
     }
 
+
+    // 주변에 무기가 있고, 무기를 조준 후 G키를 눌렀을때 아이템을 장착하는 메소드
     private void CheckGetWeapon()
     {
-        if(aroundWeapons.Count > 0 && Input.GetKeyDown(KeyCode.G))
+        if (aroundWeapons.Count > 0 && Input.GetKeyDown(KeyCode.G))
         {
             GameObject aimed = crossHair.GetAimedObject();
 
-            if(aroundWeapons.Contains(aimed))
+            if (aroundWeapons.Contains(aimed))
             {
                 aimed.tag = "Equipped";
                 aroundWeapons.Remove(aimed);
-                aimed.transform.rotation = playerRightHand.transform.rotation;
-                aimed.transform.position = playerRightHand.transform.position;
-                aimed.transform.parent = playerRightHand.transform;
+                ChangeWeapon(aimed);
             }
         }
     }
 
-    // 플레이어가 Space 버튼을 눌렀는지 검사하는 함수
+    // 1번키, 2번키를 통해 무기를 스왑하는 메소드
+    private void CheckSwapWeapon()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1) && curWeapon == 1)
+        {
+            curWeapon = 0;
+
+            SwapWeaponPosition(1, 0);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2) && curWeapon == 0)
+        {
+            curWeapon = 1;
+
+            SwapWeaponPosition(0, 1);
+        }
+    }
+
+    // 1번 무기, 2번 무기 중 from번을 to번으로 무기의 위치를 교체하는 메소드
+    private void SwapWeaponPosition(int from, int to)
+    {
+        if (playerWeapons[from] != null)
+        {
+            playerWeapons[from].transform.position = playerBack.transform.position;
+            playerWeapons[from].transform.rotation = playerBack.transform.rotation;
+            playerWeapons[from].transform.parent = playerBack.transform;
+        }
+
+        if (playerWeapons[to] != null)
+        {
+            playerWeapons[to].transform.position = playerRightHand.transform.position;
+            playerWeapons[to].transform.rotation = playerRightHand.transform.rotation;
+            playerWeapons[to].transform.parent = playerRightHand.transform;
+        }
+    }
+
+    // 무기를 교체하는 메소드
+    private void ChangeWeapon(GameObject weapon)
+    {
+        if (playerWeapons[curWeapon] != null)
+        {
+            playerWeapons[curWeapon].transform.parent = null;
+            playerWeapons[curWeapon].transform.position = transform.position;
+            playerWeapons[curWeapon].transform.rotation = Quaternion.Euler(new Vector3(90f, 0f, 90f));
+        }
+
+        playerWeapons[curWeapon] = weapon;
+        weapon.transform.rotation = playerRightHand.transform.rotation;
+        weapon.transform.position = playerRightHand.transform.position;
+        weapon.transform.parent = playerRightHand.transform;
+    }
+
+    // 플레이어가 Space 버튼을 눌렀는지 검사하는 메소드
     private bool CheckSpace()
     {
         if (Input.GetKeyDown(KeyCode.Space))
@@ -130,7 +187,7 @@ public class PlayerControl : MonoBehaviour
         return false;
     }
 
-    // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 함수
+    // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 메소드
     private void CheckRun()
     {
         if (Input.GetKey(KeyCode.LeftShift))
@@ -146,7 +203,7 @@ public class PlayerControl : MonoBehaviour
     }
 
 
-    // 플레이어가 이동하는 함수, 플레이어의 다음 이동할 거리 반환(Vector3)
+    // 플레이어가 이동하는 메소드, 플레이어의 다음 이동할 거리 반환(Vector3)
     private float PlayerMove(float moveV, float moveH)
     {
         float move;
@@ -238,8 +295,3 @@ public class PlayerControl : MonoBehaviour
     }
 }
 
-
-public static class PlayerConstant
-{
-    public static float PLAYER_HEIGHT = 1.2f;
-}
