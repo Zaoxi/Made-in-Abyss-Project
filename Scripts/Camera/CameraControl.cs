@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class CameraControl : MonoBehaviour
 {
+    private static CameraControl instance = null;
+
     // 마우스 민감도
     public float sensitibity;
     
@@ -22,13 +24,18 @@ public class CameraControl : MonoBehaviour
     private const float MOUSE_VERTICAL_ROTATION_SPEED = 70f;
     private const float MOUSE_VERTICAL_BASE_SENSITIVITY = 0.015f;
 
-    // Use this for initialization
+
+    public static CameraControl GetInstance()
+    {
+        if (instance == null) instance = FindObjectOfType<CameraControl>();
+        return instance;
+    }
+
     void Start()
     {
         playerObject = GameObject.FindGameObjectWithTag("Player");
     }
 
-    // Update is called once per frame
     void Update()
     {
         float moveX = Input.GetAxis("Mouse X");

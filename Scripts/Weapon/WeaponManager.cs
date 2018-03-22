@@ -5,7 +5,7 @@ using UnityEngine;
 public class WeaponManager : MonoBehaviour
 {
     private static WeaponManager instance = null;
-    private RikoController playerControl;
+    private PlayerManager playerManager;
 
     // 모든 무기 저장
     public GameObject runicAxe;
@@ -19,14 +19,11 @@ public class WeaponManager : MonoBehaviour
     
     void Start()
     {
-        playerControl = RikoController.GetInstance();
-
-        //GameObject existRunicAxe = Instantiate(runicAxe);
-
+        playerManager = PlayerManager.GetInstance();
     }
 
     public RikoController GetPlayerControl()
     {
-        return playerControl;
+        return playerManager.GetRiko();
     }
 }
