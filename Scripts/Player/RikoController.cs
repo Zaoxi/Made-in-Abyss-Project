@@ -30,9 +30,8 @@ public class RikoController : MonoBehaviour
     private bool space = false;
     // 달리기를 활성화하는 플래그
     private bool run = false;
-    // F(아이템 줍기)키를 활성화 하는 플래그
-    private int f = 0;
-
+    // 아이템을 줍는중인지 확인하는 플래그
+    private bool pickUp = false;
 
     // 방금 프레임에서 움직인 거리
     private float previousMove = 0f;
@@ -43,6 +42,7 @@ public class RikoController : MonoBehaviour
     private const float FRAME_ROTATION = 20F;
     // 플레이어 구르기 애니메이션 대기시간
     private const float WAIT_ROLLING = 1.3f;
+    private const float WAIT_PICKUP = 1f;
 
     void Start()
     {
@@ -67,8 +67,11 @@ public class RikoController : MonoBehaviour
 
     void Update()
     {
-        CheckGetWeapon();
-        CheckSwapWeapon();
+        if (!pickUp && !space && !run)
+        {
+            CheckGetWeapon();
+            CheckSwapWeapon();
+        }
     }
 
     void FixedUpdate()
@@ -80,7 +83,7 @@ public class RikoController : MonoBehaviour
         CheckRun();
 
 
-        if (!space)
+        if (!space && !pickUp)
         {
             // 플레이어의 움직임제어
             previousMove = PlayerMove(moveV, moveH);
@@ -94,6 +97,7 @@ public class RikoController : MonoBehaviour
         }
 
     }
+
 
     public void AddAroundWeapon(GameObject weapon)
     {
@@ -115,9 +119,12 @@ public class RikoController : MonoBehaviour
 
             if (aroundWeapons.Contains(aimed))
             {
+                // 아이템을 줍는 애니메이션 실행
+                playerAnimator.SetTrigger("Pickup");
+                pickUp = true;
                 aimed.tag = "Equipped";
                 aroundWeapons.Remove(aimed);
-                ChangeWeapon(aimed);
+                StartCoroutine(ChangeWeapon(aimed));
             }
         }
     }
@@ -158,8 +165,12 @@ public class RikoController : MonoBehaviour
     }
 
     // 무기를 교체하는 메소드
-    private void ChangeWeapon(GameObject weapon)
+    private IEnumerator ChangeWeapon(GameObject weapon)
     {
+        // 애니메이션이 완료되는 시간까지 대기
+        yield return new WaitForSeconds(WAIT_PICKUP);
+
+        // 플레이어가 맨손이라면
         if (playerWeapons[curWeapon] != null)
         {
             playerWeapons[curWeapon].transform.parent = null;
@@ -167,10 +178,14 @@ public class RikoController : MonoBehaviour
             playerWeapons[curWeapon].transform.rotation = Quaternion.Euler(new Vector3(90f, 0f, 90f));
         }
 
+        // 플레이어의 손에 무기를 장착한다.
         playerWeapons[curWeapon] = weapon;
         weapon.transform.rotation = playerRightHand.transform.rotation;
         weapon.transform.position = playerRightHand.transform.position;
         weapon.transform.parent = playerRightHand.transform;
+
+        // 아이템 줍기 애니메이션이 끝났음을 가리키는 플래그
+        pickUp = false;
     }
 
     // 플레이어가 Space 버튼을 눌렀는지 검사하는 메소드
