@@ -11,6 +11,7 @@ public class RikoController : MonoBehaviour
     private Animator playerAnimator;
     // 플레이어 등 아이템 장착 위치
     private PlayerBack playerBack;
+    private PlayerBack2 playerBack2;
     // 플레이어 오른손 아이템 장착 위치
     private PlayerRightHand playerRightHand;
 
@@ -22,6 +23,10 @@ public class RikoController : MonoBehaviour
     // 플레이어가 현재 가지고 있는 무기
     private GameObject[] playerWeapons;
     private int curWeapon = 0;
+
+    // 플레이어 전투태세 전환 플래그
+    private bool combat = false;
+    private bool swapping = false;
 
     // 플레이어의 스피드
     public float speed;
@@ -42,7 +47,10 @@ public class RikoController : MonoBehaviour
     private const float FRAME_ROTATION = 20F;
     // 플레이어 구르기 애니메이션 대기시간
     private const float WAIT_ROLLING = 1.3f;
-    private const float WAIT_PICKUP = 1f;
+    private const float WAIT_PICKUP = 0.7f;
+    private const float WAIT_COMBAT = 0.8f;
+    private const float WAIT_SWAP = 0.8f;
+    private const float SWAP_COMPLETE = 1f;
 
     void Start()
     {
@@ -61,16 +69,20 @@ public class RikoController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         // 리코의 등과 오른손에 아이템을 장착할 위치 획득
         playerBack = GameObject.FindObjectOfType<PlayerBack>();
+        playerBack2 = GameObject.FindObjectOfType<PlayerBack2>();
         playerRightHand = GameObject.FindObjectOfType<PlayerRightHand>();
+
 
     }
 
     void Update()
     {
-        if (!pickUp && !space && !run)
+        // 줍기상태, 점프상태, 달리기 상태, 무기 전환 상태가 아닐 때
+        if (!pickUp && !space && !run && !swapping)
         {
             CheckGetWeapon();
             CheckSwapWeapon();
+            CheckSwitchToIdle();
         }
     }
 
@@ -82,8 +94,8 @@ public class RikoController : MonoBehaviour
         // 플레이어가 Shift키를 눌렀는지 검사
         CheckRun();
 
-
-        if (!space && !pickUp)
+        // 줍기상태, 점프상태, 무기 전환 상태가 아닐 때
+        if (!space && !pickUp && !swapping)
         {
             // 플레이어의 움직임제어
             previousMove = PlayerMove(moveV, moveH);
@@ -109,6 +121,58 @@ public class RikoController : MonoBehaviour
         aroundWeapons.Remove(weapon);
     }
 
+    // 비무장 상태로 전환하는 V키를 검사하는 함수
+    private void CheckSwitchToIdle()
+    {
+        // 현재 선택한 무기의 다음무기
+        int nextWeapon = (curWeapon + 1) % 2;
+
+        // V키가 눌렸고, 무장상태라면
+        if (Input.GetKeyDown(KeyCode.V) && combat)
+        {
+            // 플레이어의 다음 무기가 없는 경우, 허리에 무기를 보관한다.
+            if (playerWeapons[nextWeapon] == null)
+            {
+                combat = false;
+                swapping = true;
+                playerAnimator.SetTrigger("Swap");
+                playerAnimator.SetBool("Weapon", false);
+                StartCoroutine(SwapWeaponPosition(curWeapon, nextWeapon));
+            } // 플레이어의 다음 무기가 있는 경우, 어깨에 무기를 보관한다.
+            else
+            {
+                combat = false;
+                swapping = true;
+                playerAnimator.SetBool("Weapon", false);
+
+                StartCoroutine(SwitchToCombat());
+            }
+        }
+    }
+
+    // 손에 무기를 고정시키거나 어꺠에 고정시키는 함수
+    private IEnumerator SwitchToCombat()
+    {
+        yield return new WaitForSeconds(WAIT_COMBAT);
+
+        // 현재 전투상태라면
+        if (combat == true)
+        {
+            playerWeapons[curWeapon].transform.position = playerRightHand.transform.position;
+            playerWeapons[curWeapon].transform.rotation = playerRightHand.transform.rotation;
+            playerWeapons[curWeapon].transform.parent = playerRightHand.transform;
+        }// 현재 비 전투 상태라면
+        else
+        {
+            playerWeapons[curWeapon].transform.position = playerBack2.transform.position;
+            playerWeapons[curWeapon].transform.rotation = playerBack2.transform.rotation;
+            playerWeapons[curWeapon].transform.parent = playerBack2.transform;
+        }
+
+        yield return new WaitForSeconds(SWAP_COMPLETE);
+        swapping = false;
+    }
+
 
     // 주변에 무기가 있고, 무기를 조준 후 G키를 눌렀을때 아이템을 장착하는 메소드
     private void CheckGetWeapon()
@@ -121,7 +185,9 @@ public class RikoController : MonoBehaviour
             {
                 // 아이템을 줍는 애니메이션 실행
                 playerAnimator.SetTrigger("Pickup");
+                // 아이템을 줍는 동작동안 조작불가능 플래그
                 pickUp = true;
+
                 aimed.tag = "Equipped";
                 aroundWeapons.Remove(aimed);
                 StartCoroutine(ChangeWeapon(aimed));
@@ -132,23 +198,85 @@ public class RikoController : MonoBehaviour
     // 1번키, 2번키를 통해 무기를 스왑하는 메소드
     private void CheckSwapWeapon()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1) && curWeapon == 1)
-        {
-            curWeapon = 0;
+        bool alpha1 = Input.GetKeyDown(KeyCode.Alpha1);
+        bool alpha2 = Input.GetKeyDown(KeyCode.Alpha2);
+        int nextWeapon = (curWeapon + 1) % 2;
 
-            SwapWeaponPosition(1, 0);
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha2) && curWeapon == 0)
+        // 플레이어가 비무장상태이고, 두번째 무기가 있을때 1, 2번 키를 누르면 무장상태로 전환
+        if ((alpha1 || alpha2) && !combat && playerWeapons[nextWeapon] != null)
         {
-            curWeapon = 1;
+            combat = true;
+            swapping = true;
+            playerAnimator.SetBool("Weapon", true);
 
-            SwapWeaponPosition(0, 1);
+            StartCoroutine(SwitchToCombat());
+        } // 플레이어가 1번을 눌렀을때, 현재 무기가 2번 무기인 경우
+        else if (alpha1 && curWeapon == 1)
+        {
+            // 등에 고정된 무기를 바꾸는 애니메이션 실행
+            swapping = true;
+            playerAnimator.SetTrigger("Swap");
+            // 플레이어의 1번 무기가 없는 경우
+            if (playerWeapons[0] == null)
+            {
+                // 플레이어가 무장 상태라면, 비무장 상태로 전환하면서 등에 2번 무기를 고정시킨다.
+                if (combat)
+                {
+                    combat = false;
+                    playerAnimator.SetBool("Weapon", false);
+                    StartCoroutine(SwapWeaponPosition(1, 0));
+                }
+                else // 플레이어가 비무장 상태라면 무장상태로 전환하고, 등에 위치한 2번 무기를 오른손에 고정시킨다.
+                {
+                    combat = true;
+                    playerAnimator.SetBool("Weapon", true);
+                    StartCoroutine(SwapWeaponPosition(0, 1));
+                }
+            }
+            else // 플레이어가 1, 2번 무기를 모두 가지고 있다면, 1번 무기로 교체한다.
+            {
+                curWeapon = 0;
+
+                StartCoroutine(SwapWeaponPosition(1, 0));
+            }
+        } // 2번을 눌렀을때, 플레이어의 무기가 1번 무기인 경우
+        else if (alpha2 && curWeapon == 0)
+        {
+            swapping = true;
+            playerAnimator.SetTrigger("Swap");
+            // 플레이어의 2번 무기가 없는 경우
+            if (playerWeapons[1] == null)
+            {
+                // 플레이어가 무장상태라면, 비무장 상태로 전환하고, 1번 무기를 등에 고정한다.
+                if (combat)
+                {
+                    combat = false;
+                    playerAnimator.SetBool("Weapon", false);
+                    StartCoroutine(SwapWeaponPosition(0, 1));
+                }
+                else // 플레이어가 비무장 상태라면, 무장상태로 전환하고, 1번 무기를 오른손에 고정한다.
+                {
+                    combat = true;
+                    playerAnimator.SetBool("Weapon", true);
+                    StartCoroutine(SwapWeaponPosition(1, 0));
+                }
+            }
+            else // 플레이어가 1, 2번 무기를 모두 갖고 있다면, 2번 무기로 교체한다.
+            {
+                curWeapon = 1;
+
+                StartCoroutine(SwapWeaponPosition(0, 1));
+            }
         }
+
     }
 
     // 1번 무기, 2번 무기 중 from번을 to번으로 무기의 위치를 교체하는 메소드
-    private void SwapWeaponPosition(int from, int to)
+    private IEnumerator SwapWeaponPosition(int from, int to)
     {
+        // 무기가 스왑되는 순간까지 기다린다.
+        yield return new WaitForSeconds(WAIT_SWAP);
+
         if (playerWeapons[from] != null)
         {
             playerWeapons[from].transform.position = playerBack.transform.position;
@@ -162,6 +290,10 @@ public class RikoController : MonoBehaviour
             playerWeapons[to].transform.rotation = playerRightHand.transform.rotation;
             playerWeapons[to].transform.parent = playerRightHand.transform;
         }
+        // 스왑 애니메이션이 끝날때 까지 기다린다.
+        yield return new WaitForSeconds(SWAP_COMPLETE);
+
+        swapping = false;
     }
 
     // 무기를 교체하는 메소드
@@ -170,22 +302,39 @@ public class RikoController : MonoBehaviour
         // 애니메이션이 완료되는 시간까지 대기
         yield return new WaitForSeconds(WAIT_PICKUP);
 
-        // 플레이어가 맨손이라면
-        if (playerWeapons[curWeapon] != null)
-        {
-            playerWeapons[curWeapon].transform.parent = null;
-            playerWeapons[curWeapon].transform.position = transform.position;
-            playerWeapons[curWeapon].transform.rotation = Quaternion.Euler(new Vector3(90f, 0f, 90f));
-        }
+        int nextWeapon = (curWeapon + 1) % 2;
 
-        // 플레이어의 손에 무기를 장착한다.
-        playerWeapons[curWeapon] = weapon;
+
+        // 플레이어가 현재 무기를 갖고있고,
+        if (playerWeapons[curWeapon] != null)
+        {   // 플레이어가 다음 무기가 없고, 비무장 상태인 경우 (플레이어가 무장인 상태에서 한개의 무기만 가지는 경우를 고려)
+            if (System.NullReferenceException.ReferenceEquals(playerWeapons[nextWeapon], null) && !combat)
+            {
+                curWeapon = nextWeapon;
+                playerWeapons[nextWeapon] = weapon;
+            }// 플레이어가 다음 무기도 가지고 있는 경우
+            else
+            {
+                playerWeapons[curWeapon].transform.parent = null;
+                playerWeapons[curWeapon].transform.position = transform.position;
+                playerWeapons[curWeapon].transform.rotation = Quaternion.Euler(new Vector3(90f, 0f, 90f));
+                playerWeapons[curWeapon] = weapon;
+            }
+        }
+        else // 플레이어의 무기가 하나도 없는 경우
+        {
+            playerWeapons[curWeapon] = weapon;
+        }
+        // 플레이어의 손에 무기를 장착한다
         weapon.transform.rotation = playerRightHand.transform.rotation;
         weapon.transform.position = playerRightHand.transform.position;
         weapon.transform.parent = playerRightHand.transform;
-
         // 아이템 줍기 애니메이션이 끝났음을 가리키는 플래그
         pickUp = false;
+
+        // 플레이어가 무장상태로 전환
+        combat = true;
+        playerAnimator.SetBool("Weapon", true);
     }
 
     // 플레이어가 Space 버튼을 눌렀는지 검사하는 메소드
@@ -204,12 +353,12 @@ public class RikoController : MonoBehaviour
     // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 메소드
     private void CheckRun()
     {
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             playerAnimator.SetBool("Run", true);
             run = true;
         }
-        else //if (Input.GetKeyUp(KeyCode.LeftShift))
+        else if (Input.GetKeyUp(KeyCode.LeftShift))
         {
             playerAnimator.SetBool("Run", false);
             run = false;
@@ -290,7 +439,7 @@ public class RikoController : MonoBehaviour
                 rb.transform.Rotate(0f, (angleTerm - 90) / FRAME_ROTATION, 0f);
                 move = -moveH_deltaTime;
             }
-            else if(Input.GetKey(KeyCode.S))
+            else if (Input.GetKey(KeyCode.S))
             {
                 rb.transform.Rotate(0f, backAngleTerm / FRAME_ROTATION, 0f);
                 move = -moveV_deltaTime;
