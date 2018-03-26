@@ -44,12 +44,12 @@ public class RikoController : MonoBehaviour
     private float startTime = 0f;
 
     // 플레이어 회전 프레임
-    private const float FRAME_ROTATION = 20F;
+    private const float FRAME_ROTATION = 10F;
     // 플레이어 구르기 애니메이션 대기시간
     private const float WAIT_ROLLING = 1.3f;
-    private const float WAIT_PICKUP = 0.7f;
+    private const float WAIT_PICKUP = 1f;
     private const float WAIT_COMBAT = 0.8f;
-    private const float WAIT_SWAP = 0.8f;
+    private const float WAIT_SWAP = 0.5f;
     private const float SWAP_COMPLETE = 1f;
 
     void Start()
@@ -185,10 +185,10 @@ public class RikoController : MonoBehaviour
             {
                 // 아이템을 줍는 애니메이션 실행
                 playerAnimator.SetTrigger("Pickup");
-                playerAnimator.SetBool("Weapon", true);
+                //playerAnimator.SetBool("Weapon", true);
                 // 아이템을 줍는 동작동안 조작불가능 플래그
                 pickUp = true;
-                combat = true;
+                //combat = true;
                 aimed.tag = "Equipped";
                 aroundWeapons.Remove(aimed);
                 StartCoroutine(ChangeWeapon(aimed));
@@ -309,10 +309,12 @@ public class RikoController : MonoBehaviour
         // 플레이어가 현재 무기를 갖고있고,
         if (playerWeapons[curWeapon] != null)
         {   // 플레이어가 다음 무기가 없고, 비무장 상태인 경우 (플레이어가 무장인 상태에서 한개의 무기만 가지는 경우를 고려)
-            if (System.NullReferenceException.ReferenceEquals(playerWeapons[nextWeapon], null) && !combat)
+            Debug.Log(combat);
+            if (GameObject.ReferenceEquals(playerWeapons[nextWeapon], null) && !combat)
             {
-                curWeapon = nextWeapon;
+                Debug.Log("HI");
                 playerWeapons[nextWeapon] = weapon;
+                curWeapon = nextWeapon;
             }// 플레이어가 다음 무기도 가지고 있는 경우
             else
             {
@@ -354,12 +356,15 @@ public class RikoController : MonoBehaviour
     // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 메소드
     private void CheckRun()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        if (Input.GetKey(KeyCode.LeftShift))
         {
-            playerAnimator.SetBool("Run", true);
-            run = true;
+            if (!run)
+            {
+                playerAnimator.SetBool("Run", true);
+                run = true;
+            }
         }
-        else if (Input.GetKeyUp(KeyCode.LeftShift))
+        else
         {
             playerAnimator.SetBool("Run", false);
             run = false;
@@ -465,90 +470,6 @@ public class RikoController : MonoBehaviour
         }
 
         rb.transform.Translate(0f, 0f, move);
-
-
-        //// 플레이어가 움직이는 경우
-        //if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D))
-        //{
-
-        //    // 카메라 각도 - 플레이어의 각도 = 플레이어가 회전해야 할 각도
-        //    float angleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y;
-        //    float backAngleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y + 180;
-
-        //    // angleTerm이 180도 보다 크다면, 3xx 도 -> x도
-        //    if (angleTerm > 180f)
-        //    {
-        //        angleTerm -= 360f;
-        //    } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
-        //    else if (angleTerm < -180f)
-        //    {
-        //        angleTerm += 360f;
-        //    }
-
-        //    // backAngleTerm 180도 보다 크다면, 3xx 도 -> x도
-        //    if (backAngleTerm > 180f)
-        //    {
-        //        backAngleTerm -= 360f;
-        //    } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
-        //    else if (backAngleTerm < -180f)
-        //    {
-        //        backAngleTerm += 360f;
-        //    }
-
-
-
-        //    if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.W))
-        //    {
-        //        rb.transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
-        //        move = (moveV_deltaTime > moveH_deltaTime ? moveV_deltaTime : moveH_deltaTime);
-        //    }
-        //    else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.W))
-        //    {
-        //        rb.transform.Rotate(0f, (angleTerm - 45) / FRAME_ROTATION, 0f);
-        //        move = (moveV_deltaTime > -moveH_deltaTime ? moveV_deltaTime : -moveH_deltaTime);
-        //    }
-        //    else if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.S))
-        //    {
-        //        rb.transform.Rotate(0f, (backAngleTerm - 45) / FRAME_ROTATION, 0f);
-        //        move = (moveV_deltaTime < -moveH_deltaTime ? -moveV_deltaTime : moveH_deltaTime);
-        //    }
-        //    else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.S))
-        //    {
-        //        rb.transform.Rotate(0f, (backAngleTerm + 45) / FRAME_ROTATION, 0f);
-        //        move = (moveV_deltaTime < moveH_deltaTime ? -moveV_deltaTime : -moveH_deltaTime);
-        //    }
-        //    else if (Input.GetKey(KeyCode.D))
-        //    {
-        //        rb.transform.Rotate(0f, (angleTerm + 90) / FRAME_ROTATION, 0f);
-        //        move = moveH_deltaTime;
-        //    }
-        //    else if (Input.GetKey(KeyCode.A))
-        //    {
-        //        rb.transform.Rotate(0f, (angleTerm - 90) / FRAME_ROTATION, 0f);
-        //        move = -moveH_deltaTime;
-        //    }
-        //    else if (Input.GetKey(KeyCode.S))
-        //    {
-        //        rb.transform.Rotate(0f, backAngleTerm / FRAME_ROTATION, 0f);
-        //        move = -moveV_deltaTime;
-        //    }
-        //    else
-        //    {
-        //        rb.transform.Rotate(0f, angleTerm / FRAME_ROTATION, 0f);
-        //        move = moveV_deltaTime;
-        //    }
-        //}
-        //else
-        //{
-        //    move = (Mathf.Abs(moveV) < Mathf.Abs(moveH) ? Mathf.Abs(moveH_deltaTime) : moveV_deltaTime);
-        //}
-
-        //if (run)
-        //{
-        //    move *= 2f;
-        //}
-
-        //rb.transform.Translate(0f, 0f, move);
 
         return move;
     }
