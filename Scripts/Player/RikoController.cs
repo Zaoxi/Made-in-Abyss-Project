@@ -185,9 +185,10 @@ public class RikoController : MonoBehaviour
             {
                 // 아이템을 줍는 애니메이션 실행
                 playerAnimator.SetTrigger("Pickup");
+                playerAnimator.SetBool("Weapon", true);
                 // 아이템을 줍는 동작동안 조작불가능 플래그
                 pickUp = true;
-
+                combat = true;
                 aimed.tag = "Equipped";
                 aroundWeapons.Remove(aimed);
                 StartCoroutine(ChangeWeapon(aimed));
@@ -211,7 +212,7 @@ public class RikoController : MonoBehaviour
 
             StartCoroutine(SwitchToCombat());
         } // 플레이어가 1번을 눌렀을때, 현재 무기가 2번 무기인 경우
-        else if (alpha1 && curWeapon == 1)
+        else if (alpha1 && curWeapon == 1) // ** 비무장상태에서는 1, 2번 둘중 아무거나 눌러도 무장상태로 변하는 수정작업 필요**
         {
             // 등에 고정된 무기를 바꾸는 애니메이션 실행
             swapping = true;
@@ -374,85 +375,88 @@ public class RikoController : MonoBehaviour
         float moveV_deltaTime = moveV * Time.deltaTime;
         float moveH_deltaTime = moveH * Time.deltaTime;
 
-        // 애니메이터 패러미터 세팅
-        playerAnimator.SetFloat("moveV", moveV);
-        playerAnimator.SetFloat("moveH", moveH);
-
+        
 
         // 플레이어가 움직이는 경우
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D))
+        // 카메라 각도 - 플레이어의 각도 = 플레이어가 회전해야 할 각도
+        float angleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y;
+        float backAngleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y + 180;
+
+        // angleTerm이 180도 보다 크다면, 3xx 도 -> x도
+        if (angleTerm > 180f)
         {
+            angleTerm -= 360f;
+        } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
+        else if (angleTerm < -180f)
+        {
+            angleTerm += 360f;
+        }
 
-            // 카메라 각도 - 플레이어의 각도 = 플레이어가 회전해야 할 각도
-            float angleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y;
-            float backAngleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y + 180;
+        // backAngleTerm 180도 보다 크다면, 3xx 도 -> x도
+        if (backAngleTerm > 180f)
+        {
+            backAngleTerm -= 360f;
+        } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
+        else if (backAngleTerm < -180f)
+        {
+            backAngleTerm += 360f;
+        }
 
-            // angleTerm이 180도 보다 크다면, 3xx 도 -> x도
-            if (angleTerm > 180f)
-            {
-                angleTerm -= 360f;
-            } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
-            else if (angleTerm < -180f)
-            {
-                angleTerm += 360f;
-            }
-
-            // backAngleTerm 180도 보다 크다면, 3xx 도 -> x도
-            if (backAngleTerm > 180f)
-            {
-                backAngleTerm -= 360f;
-            } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
-            else if (backAngleTerm < -180f)
-            {
-                backAngleTerm += 360f;
-            }
-
-
-
-            if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.W))
-            {
-                rb.transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
-                move = (moveV_deltaTime > moveH_deltaTime ? moveV_deltaTime : moveH_deltaTime);
-            }
-            else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.W))
+        // 전후좌우 이동 처리
+        if (moveH < -0.1f)
+        {
+            playerAnimator.SetBool("move", true);
+            if (moveV > 0.1f)// W, A를 누른경우
             {
                 rb.transform.Rotate(0f, (angleTerm - 45) / FRAME_ROTATION, 0f);
                 move = (moveV_deltaTime > -moveH_deltaTime ? moveV_deltaTime : -moveH_deltaTime);
             }
-            else if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.S))
-            {
-                rb.transform.Rotate(0f, (backAngleTerm - 45) / FRAME_ROTATION, 0f);
-                move = (moveV_deltaTime < -moveH_deltaTime ? -moveV_deltaTime : moveH_deltaTime);
-            }
-            else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.S))
+            else if (moveV < -0.1f)// S, A를 누른경우
             {
                 rb.transform.Rotate(0f, (backAngleTerm + 45) / FRAME_ROTATION, 0f);
                 move = (moveV_deltaTime < moveH_deltaTime ? -moveV_deltaTime : -moveH_deltaTime);
             }
-            else if (Input.GetKey(KeyCode.D))
-            {
-                rb.transform.Rotate(0f, (angleTerm + 90) / FRAME_ROTATION, 0f);
-                move = moveH_deltaTime;
-            }
-            else if (Input.GetKey(KeyCode.A))
+            else // A를 누른경우
             {
                 rb.transform.Rotate(0f, (angleTerm - 90) / FRAME_ROTATION, 0f);
                 move = -moveH_deltaTime;
             }
-            else if (Input.GetKey(KeyCode.S))
+        }
+        else if (moveH > 0.1f)
+        {
+            playerAnimator.SetBool("move", true);
+            if (moveV > 0.1f)// W, D를 누른경우
             {
-                rb.transform.Rotate(0f, backAngleTerm / FRAME_ROTATION, 0f);
-                move = -moveV_deltaTime;
+                rb.transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
+                move = (moveV_deltaTime > moveH_deltaTime ? moveV_deltaTime : moveH_deltaTime);
             }
-            else
+            else if (moveV < -0.1f)// S, D를 누른경우
             {
-                rb.transform.Rotate(0f, angleTerm / FRAME_ROTATION, 0f);
-                move = moveV_deltaTime;
+                rb.transform.Rotate(0f, (backAngleTerm - 45) / FRAME_ROTATION, 0f);
+                move = (moveV_deltaTime < -moveH_deltaTime ? -moveV_deltaTime : moveH_deltaTime);
+            }
+            else // D를 누른경우
+            {
+                rb.transform.Rotate(0f, (angleTerm + 90) / FRAME_ROTATION, 0f);
+                move = moveH_deltaTime;
             }
         }
-        else
+        else if (moveV > 0.1f) // W를 누른 경우
         {
-            move = (Mathf.Abs(moveV) < Mathf.Abs(moveH) ? Mathf.Abs(moveH_deltaTime) : moveV_deltaTime);
+            playerAnimator.SetBool("move", true);
+            rb.transform.Rotate(0f, angleTerm / FRAME_ROTATION, 0f);
+            move = moveV_deltaTime;
+        }
+        else if (moveV < -0.1f) // S를 누른 경우
+        {
+            playerAnimator.SetBool("move", true);
+            rb.transform.Rotate(0f, backAngleTerm / FRAME_ROTATION, 0f);
+            move = -moveV_deltaTime;
+        }
+        else // 아무것도 눌리지 않은 경우
+        {
+            playerAnimator.SetBool("move", false);
+            move = 0f;
         }
 
         if (run)
@@ -461,6 +465,90 @@ public class RikoController : MonoBehaviour
         }
 
         rb.transform.Translate(0f, 0f, move);
+
+
+        //// 플레이어가 움직이는 경우
+        //if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D))
+        //{
+
+        //    // 카메라 각도 - 플레이어의 각도 = 플레이어가 회전해야 할 각도
+        //    float angleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y;
+        //    float backAngleTerm = playerCamera.transform.eulerAngles.y - transform.eulerAngles.y + 180;
+
+        //    // angleTerm이 180도 보다 크다면, 3xx 도 -> x도
+        //    if (angleTerm > 180f)
+        //    {
+        //        angleTerm -= 360f;
+        //    } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
+        //    else if (angleTerm < -180f)
+        //    {
+        //        angleTerm += 360f;
+        //    }
+
+        //    // backAngleTerm 180도 보다 크다면, 3xx 도 -> x도
+        //    if (backAngleTerm > 180f)
+        //    {
+        //        backAngleTerm -= 360f;
+        //    } // angleTerm이 -180도 보다 작다면, x도 -> 3xx도
+        //    else if (backAngleTerm < -180f)
+        //    {
+        //        backAngleTerm += 360f;
+        //    }
+
+
+
+        //    if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.W))
+        //    {
+        //        rb.transform.Rotate(0f, (angleTerm + 45) / FRAME_ROTATION, 0f);
+        //        move = (moveV_deltaTime > moveH_deltaTime ? moveV_deltaTime : moveH_deltaTime);
+        //    }
+        //    else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.W))
+        //    {
+        //        rb.transform.Rotate(0f, (angleTerm - 45) / FRAME_ROTATION, 0f);
+        //        move = (moveV_deltaTime > -moveH_deltaTime ? moveV_deltaTime : -moveH_deltaTime);
+        //    }
+        //    else if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.S))
+        //    {
+        //        rb.transform.Rotate(0f, (backAngleTerm - 45) / FRAME_ROTATION, 0f);
+        //        move = (moveV_deltaTime < -moveH_deltaTime ? -moveV_deltaTime : moveH_deltaTime);
+        //    }
+        //    else if (Input.GetKey(KeyCode.A) && Input.GetKey(KeyCode.S))
+        //    {
+        //        rb.transform.Rotate(0f, (backAngleTerm + 45) / FRAME_ROTATION, 0f);
+        //        move = (moveV_deltaTime < moveH_deltaTime ? -moveV_deltaTime : -moveH_deltaTime);
+        //    }
+        //    else if (Input.GetKey(KeyCode.D))
+        //    {
+        //        rb.transform.Rotate(0f, (angleTerm + 90) / FRAME_ROTATION, 0f);
+        //        move = moveH_deltaTime;
+        //    }
+        //    else if (Input.GetKey(KeyCode.A))
+        //    {
+        //        rb.transform.Rotate(0f, (angleTerm - 90) / FRAME_ROTATION, 0f);
+        //        move = -moveH_deltaTime;
+        //    }
+        //    else if (Input.GetKey(KeyCode.S))
+        //    {
+        //        rb.transform.Rotate(0f, backAngleTerm / FRAME_ROTATION, 0f);
+        //        move = -moveV_deltaTime;
+        //    }
+        //    else
+        //    {
+        //        rb.transform.Rotate(0f, angleTerm / FRAME_ROTATION, 0f);
+        //        move = moveV_deltaTime;
+        //    }
+        //}
+        //else
+        //{
+        //    move = (Mathf.Abs(moveV) < Mathf.Abs(moveH) ? Mathf.Abs(moveH_deltaTime) : moveV_deltaTime);
+        //}
+
+        //if (run)
+        //{
+        //    move *= 2f;
+        //}
+
+        //rb.transform.Translate(0f, 0f, move);
 
         return move;
     }
