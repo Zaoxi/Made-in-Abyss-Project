@@ -10,6 +10,12 @@ public class PlayerManager : MonoBehaviour {
     private RegController regController = null;
     private NanachiController nanachiController = null;
 
+    // 리코, 레그, 나나치 중 플레이어가 조작하고있는 캐릭터를 선택하는 플래그
+    const int RIKO_ACTIVATE = 0;
+    const int REG_ACTIVATE = 1;
+    const int NANACHI_ACTIVATE = 2;
+    private int characterActivated = 0;
+
     public static PlayerManager GetInstance()
     {
         if (instance == null) instance = FindObjectOfType<PlayerManager>();
@@ -22,6 +28,38 @@ public class PlayerManager : MonoBehaviour {
         rikoController = FindObjectOfType<RikoController>();
         regController = FindObjectOfType<RegController>();
         nanachiController = FindObjectOfType<NanachiController>();
+    }
+
+    void Update()
+    {
+        if(characterActivated == RIKO_ACTIVATE)
+        {
+            rikoController.CheckUpdate();
+        }
+        else if (characterActivated == REG_ACTIVATE)
+        {
+
+        }
+        else if (characterActivated == NANACHI_ACTIVATE)
+        {
+
+        }
+    }
+
+    void FixedUpdate()
+    {
+        if (characterActivated == RIKO_ACTIVATE)
+        {
+            rikoController.CheckFixedUpdate();
+        }
+        else if (characterActivated == REG_ACTIVATE)
+        {
+
+        }
+        else if (characterActivated == NANACHI_ACTIVATE)
+        {
+
+        }
     }
 
 

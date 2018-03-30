@@ -27,6 +27,8 @@ public class RikoController : MonoBehaviour
     // 플레이어 전투태세 전환 플래그
     private bool combat = false;
     private bool swapping = false;
+    private bool attack = false;
+    private int numberAttack = 0;
 
     // 플레이어의 스피드
     public float speed;
@@ -38,8 +40,6 @@ public class RikoController : MonoBehaviour
     // 아이템을 줍는중인지 확인하는 플래그
     private bool pickUp = false;
 
-    // 방금 프레임에서 움직인 거리
-    private float previousMove = 0f;
     // 점프 후 조작 제어를 위한 시간
     private float startTime = 0f;
 
@@ -47,10 +47,11 @@ public class RikoController : MonoBehaviour
     private const float FRAME_ROTATION = 10F;
     // 플레이어 구르기 애니메이션 대기시간
     private const float WAIT_ROLLING = 1.3f;
-    private const float WAIT_PICKUP = 1f;
-    private const float WAIT_COMBAT = 0.8f;
+    private const float WAIT_PICKUP = 0.5f;
+    private const float PICKUP_COMPLETE = 0.5f;
+    private const float WAIT_COMBAT = 1f;
     private const float WAIT_SWAP = 0.5f;
-    private const float SWAP_COMPLETE = 1f;
+    private const float SWAP_COMPLETE = 0.8f;
 
     void Start()
     {
@@ -75,18 +76,19 @@ public class RikoController : MonoBehaviour
 
     }
 
-    void Update()
+    public void CheckUpdate()
     {
         // 줍기상태, 점프상태, 달리기 상태, 무기 전환 상태가 아닐 때
-        if (!pickUp && !space && !run && !swapping)
+        if (!pickUp && !space && !run && !swapping && !attack)
         {
             CheckGetWeapon();
             CheckSwapWeapon();
             CheckSwitchToIdle();
+            CheckAttack();
         }
     }
 
-    void FixedUpdate()
+    public void CheckFixedUpdate()
     {
         float moveV = Input.GetAxis("Vertical") * speed;
         float moveH = Input.GetAxis("Horizontal") * speed;
@@ -95,21 +97,15 @@ public class RikoController : MonoBehaviour
         CheckRun();
 
         // 줍기상태, 점프상태, 무기 전환 상태가 아닐 때
-        if (!space && !pickUp && !swapping)
+        if (!space && !pickUp && !swapping && !attack)
         {
             // 플레이어의 움직임제어
-            previousMove = PlayerMove(moveV, moveH);
+            PlayerMove(moveV, moveH);
 
             // 플레이어가 Space키를 눌렀는지 검사
-            space = CheckSpace();
-        } // Space를 누른 뒤 1초 경과 후 플레이어 조작 가능
-        else if (Time.time - startTime > WAIT_ROLLING)
-        {
-            space = false;
+            CheckSpace();
         }
-
     }
-
 
     public void AddAroundWeapon(GameObject weapon)
     {
@@ -119,6 +115,61 @@ public class RikoController : MonoBehaviour
     public void RemoveAroundWeapon(GameObject weapon)
     {
         aroundWeapons.Remove(weapon);
+    }
+
+    private void CheckAttack()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            Debug.Log(attack);
+            if (numberAttack < 3)
+            {
+                numberAttack++;
+            }
+            if (!attack)
+            {
+                attack = true;
+                playerAnimator.SetBool("Attack", true);
+                StartCoroutine(CheckAttackRoutine());
+            }
+        }
+    }
+
+    private IEnumerator CheckAttackRoutine()
+    {
+        // 첫번째 콤보
+        yield return new WaitForSeconds(0.9f);
+
+        // 첫번째 콤보만 사용할때,
+        if (numberAttack == 1)
+        {
+            playerAnimator.SetBool("Attack", false);
+            numberAttack = 0;
+            attack = false;
+
+            yield break;
+        }
+
+        // 두번째 콤보
+        yield return new WaitForSeconds(1f);
+
+        // 두번째 콤보까지만 사용할때
+        if (numberAttack == 2)
+        {
+            playerAnimator.SetBool("Attack", false);
+            numberAttack = 0;
+            attack = false;
+
+            yield break;
+        }
+
+        // 세번째 콤보
+        yield return new WaitForSeconds(1f);
+
+        // 세번째 콤보 끝
+        playerAnimator.SetBool("Attack", false);
+        numberAttack = 0;
+        attack = false;
     }
 
     // 비무장 상태로 전환하는 V키를 검사하는 함수
@@ -173,7 +224,6 @@ public class RikoController : MonoBehaviour
         swapping = false;
     }
 
-
     // 주변에 무기가 있고, 무기를 조준 후 G키를 눌렀을때 아이템을 장착하는 메소드
     private void CheckGetWeapon()
     {
@@ -185,7 +235,7 @@ public class RikoController : MonoBehaviour
             {
                 // 아이템을 줍는 애니메이션 실행
                 playerAnimator.SetTrigger("Pickup");
-                //playerAnimator.SetBool("Weapon", true);
+                playerAnimator.SetBool("Weapon", true);
                 // 아이템을 줍는 동작동안 조작불가능 플래그
                 pickUp = true;
                 //combat = true;
@@ -309,10 +359,8 @@ public class RikoController : MonoBehaviour
         // 플레이어가 현재 무기를 갖고있고,
         if (playerWeapons[curWeapon] != null)
         {   // 플레이어가 다음 무기가 없고, 비무장 상태인 경우 (플레이어가 무장인 상태에서 한개의 무기만 가지는 경우를 고려)
-            Debug.Log(combat);
             if (GameObject.ReferenceEquals(playerWeapons[nextWeapon], null) && !combat)
             {
-                Debug.Log("HI");
                 playerWeapons[nextWeapon] = weapon;
                 curWeapon = nextWeapon;
             }// 플레이어가 다음 무기도 가지고 있는 경우
@@ -332,26 +380,33 @@ public class RikoController : MonoBehaviour
         weapon.transform.rotation = playerRightHand.transform.rotation;
         weapon.transform.position = playerRightHand.transform.position;
         weapon.transform.parent = playerRightHand.transform;
+
+        yield return new WaitForSeconds(PICKUP_COMPLETE);
+
         // 아이템 줍기 애니메이션이 끝났음을 가리키는 플래그
         pickUp = false;
 
         // 플레이어가 무장상태로 전환
         combat = true;
-        playerAnimator.SetBool("Weapon", true);
     }
 
     // 플레이어가 Space 버튼을 눌렀는지 검사하는 메소드
-    private bool CheckSpace()
+    private void CheckSpace()
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
             playerAnimator.SetTrigger("Jump");
-            startTime = Time.time;
-            return true;
-        }
-        return false;
-    }
+            space = true;
 
+            StartCoroutine(StartJump());
+        }
+    }
+    // 플레이어의 점프가 끝날때 까지 대기하는 메소드
+    private IEnumerator StartJump()
+    {
+        yield return new WaitForSeconds(WAIT_ROLLING);
+        space = false;
+    }
 
     // 플레이어가 LeftShift버튼을 눌렀는지 검사하는 메소드
     private void CheckRun()
@@ -371,7 +426,6 @@ public class RikoController : MonoBehaviour
         }
     }
 
-
     // 플레이어가 이동하는 메소드, 플레이어의 다음 이동할 거리 반환(Vector3)
     private float PlayerMove(float moveV, float moveH)
     {
@@ -380,7 +434,7 @@ public class RikoController : MonoBehaviour
         float moveV_deltaTime = moveV * Time.deltaTime;
         float moveH_deltaTime = moveH * Time.deltaTime;
 
-        
+
 
         // 플레이어가 움직이는 경우
         // 카메라 각도 - 플레이어의 각도 = 플레이어가 회전해야 할 각도
