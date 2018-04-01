@@ -33,7 +33,7 @@ public class CameraControl : MonoBehaviour
 
     void Start()
     {
-        playerObject = GameObject.FindGameObjectWithTag("Player");
+
     }
 
     void Update()
@@ -43,6 +43,11 @@ public class CameraControl : MonoBehaviour
 
         CheckMouseMove(moveX, moveY);
         
+    }
+
+    public void ChangePlayerObject(GameObject player)
+    {
+        playerObject = player;
     }
 
     // 마우스의 움직임을 확인하여 카메라를 이동, 회전시키는 함수

@@ -10,6 +10,8 @@ public class PlayerManager : MonoBehaviour {
     private RegController regController = null;
     private NanachiController nanachiController = null;
 
+    private CameraControl playerCamera = null;
+
     // 리코, 레그, 나나치 중 플레이어가 조작하고있는 캐릭터를 선택하는 플래그
     const int RIKO_ACTIVATE = 0;
     const int REG_ACTIVATE = 1;
@@ -28,21 +30,24 @@ public class PlayerManager : MonoBehaviour {
         rikoController = FindObjectOfType<RikoController>();
         regController = FindObjectOfType<RegController>();
         nanachiController = FindObjectOfType<NanachiController>();
+        playerCamera = CameraControl.GetInstance();
+        playerCamera.ChangePlayerObject(rikoController.gameObject);
     }
 
     void Update()
     {
-        if(characterActivated == RIKO_ACTIVATE)
+        CheckChangePlayer();
+        if (characterActivated == RIKO_ACTIVATE)
         {
             rikoController.CheckUpdate();
         }
         else if (characterActivated == REG_ACTIVATE)
         {
-
+            regController.CheckUpdate();
         }
         else if (characterActivated == NANACHI_ACTIVATE)
         {
-
+            nanachiController.CheckUpdate();
         }
     }
 
@@ -54,11 +59,11 @@ public class PlayerManager : MonoBehaviour {
         }
         else if (characterActivated == REG_ACTIVATE)
         {
-
+            regController.CheckFixedUpdate();
         }
         else if (characterActivated == NANACHI_ACTIVATE)
         {
-
+            nanachiController.CheckFixedUpdate();
         }
     }
 
@@ -77,6 +82,26 @@ public class PlayerManager : MonoBehaviour {
     public NanachiController GetNanachi()
     {
         return nanachiController;
+    }
+
+    void CheckChangePlayer()
+    {
+        if(rikoController != null && Input.GetKeyDown(KeyCode.Z))
+        {
+            playerCamera.ChangePlayerObject(rikoController.gameObject);
+            characterActivated = RIKO_ACTIVATE;
+
+        }
+        else if(regController != null && Input.GetKeyDown(KeyCode.X))
+        {
+            playerCamera.ChangePlayerObject(regController.gameObject);
+            characterActivated = REG_ACTIVATE;
+        }
+        else if(nanachiController != null && Input.GetKeyDown(KeyCode.C))
+        {
+            playerCamera.ChangePlayerObject(nanachiController.gameObject);
+            characterActivated = NANACHI_ACTIVATE;
+        }
     }
 }
 

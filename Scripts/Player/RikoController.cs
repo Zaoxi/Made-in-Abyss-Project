@@ -79,7 +79,7 @@ public class RikoController : MonoBehaviour
     public void CheckUpdate()
     {
         // 줍기상태, 점프상태, 달리기 상태, 무기 전환 상태가 아닐 때
-        if (!pickUp && !space && !run && !swapping && !attack)
+        if (!pickUp && !space && !run && !swapping)
         {
             CheckGetWeapon();
             CheckSwapWeapon();
@@ -92,7 +92,7 @@ public class RikoController : MonoBehaviour
     {
         float moveV = Input.GetAxis("Vertical") * speed;
         float moveH = Input.GetAxis("Horizontal") * speed;
-
+        
         // 플레이어가 Shift키를 눌렀는지 검사
         CheckRun();
 
@@ -119,7 +119,7 @@ public class RikoController : MonoBehaviour
 
     private void CheckAttack()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && combat)
         {
             Debug.Log(attack);
             if (numberAttack < 3)
@@ -128,7 +128,9 @@ public class RikoController : MonoBehaviour
             }
             if (!attack)
             {
+                rb.transform.rotation = Quaternion.Euler(0f, playerCamera.transform.eulerAngles.y, 0f);
                 attack = true;
+
                 playerAnimator.SetBool("Attack", true);
                 StartCoroutine(CheckAttackRoutine());
             }
@@ -138,7 +140,7 @@ public class RikoController : MonoBehaviour
     private IEnumerator CheckAttackRoutine()
     {
         // 첫번째 콤보
-        yield return new WaitForSeconds(0.9f);
+        yield return new WaitForSeconds(1.0f);
 
         // 첫번째 콤보만 사용할때,
         if (numberAttack == 1)
@@ -151,7 +153,7 @@ public class RikoController : MonoBehaviour
         }
 
         // 두번째 콤보
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.5f);
 
         // 두번째 콤보까지만 사용할때
         if (numberAttack == 2)
